@@ -2337,7 +2337,7 @@ declare namespace monaco.editor {
 	 */
 	export interface IDocumentDiffProviderOptions {
 		/**
-		 * When set to true, the diff should ignore whitespace changes.i
+		 * When set to true, the diff should ignore whitespace changes.
 		 */
 		ignoreTrimWhitespace: boolean;
 		/**
@@ -5940,6 +5940,7 @@ declare namespace monaco.editor {
 		 * Update the editor's options after the editor has been created.
 		 */
 		updateOptions(newOptions: IDiffEditorOptions): void;
+		setBoundarySashes(sashes: IBoundarySashes): void;
 	}
 
 	export class FontInfo extends BareFontInfo {
