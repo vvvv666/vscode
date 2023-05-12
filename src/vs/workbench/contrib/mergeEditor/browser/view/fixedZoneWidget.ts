@@ -37,7 +37,8 @@ export abstract class FixedZoneWidget extends Disposable {
 			},
 			onDomNodeTop: (top) => {
 				this.widgetDomNode.style.top = `${top}px`;
-			}
+			},
+			showInHiddenAreas: true,
 		});
 		viewZoneIdsToCleanUp.push(this.viewZoneId);
 

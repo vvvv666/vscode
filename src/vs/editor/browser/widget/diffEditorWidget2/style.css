@@ -1,3 +1,83 @@
 .diff-line-delete {
 	background-color: rgba(255, 0, 0, 0.2);
 }
+
+.diff-line-add {
+	background-color: rgba(0, 255, 30, 0.2);
+}
+
+
+.diff-delete {
+	background-color: rgba(255, 0, 0, 0.2);
+}
+
+.diff-add {
+	background-color: rgba(0, 255, 30, 0.2);
+}
+
+
+
+:root {
+    --myColor: #3c3c3c;
+}
+
+.diff-hidden-lines {
+	margin: -5px 0;
+}
+
+.diff-hidden-lines .top {
+    height: 7px;
+    background-color: var(--myColor);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='7' viewBox='0 0 10 10' preserveAspectRatio='none'>       <polygon points='0,10 5,0 10,10' style='fill:white' />      </svg>") repeat 0px 0px;
+}
+
+
+.diff-hidden-lines .bottom {
+    height: 7px;
+    background-color: var(--myColor);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='7' viewBox='0 0 10 10' preserveAspectRatio='none'>       <polygon points='0,0 5,10 10,0' style='fill:white' />      </svg>") repeat 10px 0px;
+}
+
+
+
+
+.diff-hidden-lines .center {
+	background: var(--myColor);
+	/* hello */
+
+	padding: 0px 3px;
+	overflow: hidden;
+	display: block;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.diff-hidden-lines .center > span,
+.diff-hidden-lines .center > a {
+	user-select: none;
+	-webkit-user-select: none;
+	white-space: nowrap;
+}
+
+.diff-hidden-lines .center > a {
+	text-decoration: none;
+}
+
+.diff-hidden-lines .center > a:hover {
+	cursor: pointer;
+	color: var(--vscode-editorLink-activeForeground) !important;
+}
+
+.diff-hidden-lines .center > a:hover .codicon {
+	color: var(--vscode-editorLink-activeForeground) !important;
+}
+
+.diff-hidden-lines .center .codicon {
+	vertical-align: middle;
+	color: currentColor !important;
+	color: var(--vscode-editorCodeLens-foreground);
+}
+
+.merge-editor-conflict-actions > a:hover .codicon::before {
+	cursor: pointer;
+}

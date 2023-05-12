@@ -2363,6 +2363,7 @@ declare namespace monaco.editor {
 		 */
 		readonly changes: LineRangeMapping[];
 	}
+
 	/**
 	 * A range of lines (1-based).
 	 */
@@ -2376,6 +2377,7 @@ declare namespace monaco.editor {
 		 * @param lineRanges2 Must be sorted.
 		 */
 		static join(lineRanges1: readonly LineRange[], lineRanges2: readonly LineRange[]): readonly LineRange[];
+		static ofLength(startLineNumber: number, length: number): LineRange;
 		/**
 		 * The start line number.
 		 */
@@ -2413,12 +2415,14 @@ declare namespace monaco.editor {
 		intersect(other: LineRange): LineRange | undefined;
 		overlapOrTouch(other: LineRange): boolean;
 		equals(b: LineRange): boolean;
+		toInclusiveRange(): Range | null;
 	}
 
 	/**
 	 * Maps a line range in the original text model to a line range in the modified text model.
 	 */
 	export class LineRangeMapping {
+		static inverse(mapping: LineRangeMapping[], originalLineCount: number, modifiedLineCount: number): LineRangeMapping[];
 		/**
 		 * The line range in the original text model.
 		 */

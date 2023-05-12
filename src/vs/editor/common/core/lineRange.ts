@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { BugIndicatingError } from 'vs/base/common/errors';
+import { Range } from 'vs/editor/common/core/range';
 
 /**
  * A range of lines (1-based).
@@ -76,6 +77,10 @@ export class LineRange {
 			result.push(current);
 		}
 		return result;
+	}
+
+	public static ofLength(startLineNumber: number, length: number): LineRange {
+		return new LineRange(startLineNumber, startLineNumber + length);
 	}
 
 	/**
@@ -160,5 +165,12 @@ export class LineRange {
 
 	public equals(b: LineRange): boolean {
 		return this.startLineNumber === b.startLineNumber && this.endLineNumberExclusive === b.endLineNumberExclusive;
+	}
+
+	public toInclusiveRange(): Range | null {
+		if (this.isEmpty) {
+			return null;
+		}
+		return new Range(this.startLineNumber, 1, this.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER);
 	}
 }

@@ -31,6 +31,13 @@ export function autorunHandleChanges(
 	return new AutorunObserver(debugName, fn, options.handleChange);
 }
 
+export function autorunWithStore2(
+	debugName: string,
+	fn: (reader: IReader, store: DisposableStore) => void,
+): IDisposable {
+	return autorunWithStore(fn, debugName);
+}
+
 export function autorunWithStore(
 	fn: (reader: IReader, store: DisposableStore) => void,
 	debugName: string
