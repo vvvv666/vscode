@@ -893,7 +893,6 @@ class UnifiedEnvironmentVariableCollection {
 
 	getScopedEnvironmentVariableCollection(scope: vscode.EnvironmentVariableScope | undefined): IEnvironmentVariableCollection {
 		const scopedCollectionKey = this.getScopeKey(scope);
-		console.log('Getting scoped env collection', scopedCollectionKey);
 		let scopedCollection = this.scopedCollections.get(scopedCollectionKey);
 		if (!scopedCollection) {
 			scopedCollection = new ScopedEnvironmentVariableCollection(this, scope);
@@ -925,7 +924,6 @@ class UnifiedEnvironmentVariableCollection {
 			const key = this.getKey(variable, mutator.scope);
 			const value: IEnvironmentVariableMutator = { variable, ...mutator };
 			this.map.set(key, value);
-			console.log(`Setting collection key ${key} to ${value.value}`);
 			this._onDidChangeCollection.fire();
 		}
 	}
@@ -933,7 +931,6 @@ class UnifiedEnvironmentVariableCollection {
 	get(variable: string, scope: vscode.EnvironmentVariableScope | undefined): vscode.EnvironmentVariableMutator | undefined {
 		const key = this.getKey(variable, scope);
 		const value = this.map.get(key);
-		console.log(`Getting collection key ${key}: ${value?.value}, scope: ${scope?.workspaceFolder?.uri.toString()}`);
 		return value ? convertMutator(value) : undefined;
 	}
 
@@ -1025,7 +1022,6 @@ class ScopedEnvironmentVariableCollection implements vscode.EnvironmentVariableC
 	}
 
 	getScopedEnvironmentVariableCollection(scope: vscode.EnvironmentVariableScope | undefined) {
-		console.log('Fetching scope collection', scope?.workspaceFolder?.uri.toString(), this.scope?.workspaceFolder?.uri.toString());
 		return this.collection.getScopedEnvironmentVariableCollection(scope);
 	}
 

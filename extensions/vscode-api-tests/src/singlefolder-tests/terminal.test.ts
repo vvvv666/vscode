@@ -854,13 +854,10 @@ import { assertNoRpc, poll } from '../utils';
 				scopedCollection.append('B', 'scoped~b2~');
 				scopedCollection.prepend('C', 'scoped~c2~');
 				// Verify get
-				console.log('Logging value of scope', scope.workspaceFolder.uri.fsPath, scope.workspaceFolder.uri.toString());
-				console.log('Verifying get');
 				deepStrictEqual(collection.get('A'), { value: '~a2~', type: EnvironmentVariableMutatorType.Replace });
 				deepStrictEqual(collection.get('B'), { value: '~b2~', type: EnvironmentVariableMutatorType.Append });
 				deepStrictEqual(collection.get('C'), { value: '~c2~', type: EnvironmentVariableMutatorType.Prepend });
 				// Verify get for scope
-				console.log('Verifying get for scope', scope.workspaceFolder.uri.fsPath);
 				const expectedScopedCollection = collection.getScopedEnvironmentVariableCollection(scope);
 				deepStrictEqual(expectedScopedCollection.get('A'), { value: 'scoped~a2~', type: EnvironmentVariableMutatorType.Replace });
 				deepStrictEqual(expectedScopedCollection.get('B'), { value: 'scoped~b2~', type: EnvironmentVariableMutatorType.Append });
