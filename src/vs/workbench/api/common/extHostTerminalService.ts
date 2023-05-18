@@ -916,7 +916,7 @@ class UnifiedEnvironmentVariableCollection {
 
 	private _setIfDiffers(variable: string, mutator: vscode.EnvironmentVariableMutator & { scope: vscode.EnvironmentVariableScope | undefined }): void {
 		if (!mutator.scope) {
-			delete (mutator as any).scope; // Convenient for tests
+			delete mutator.scope; // Convenient for tests
 		}
 		const key = this.getKey(variable, mutator.scope);
 		const current = this.map.get(key);
@@ -924,6 +924,7 @@ class UnifiedEnvironmentVariableCollection {
 			const key = this.getKey(variable, mutator.scope);
 			const value: IEnvironmentVariableMutator = { variable, ...mutator };
 			this.map.set(key, value);
+			console.log(`Setting collection key ${key} to ${value.value}`);
 			this._onDidChangeCollection.fire();
 		}
 	}
@@ -931,6 +932,7 @@ class UnifiedEnvironmentVariableCollection {
 	get(variable: string, scope: vscode.EnvironmentVariableScope | undefined): vscode.EnvironmentVariableMutator | undefined {
 		const key = this.getKey(variable, scope);
 		const value = this.map.get(key);
+		console.log(`Getting collection key ${key}: ${value?.value}`);
 		return value ? convertMutator(value) : undefined;
 	}
 
