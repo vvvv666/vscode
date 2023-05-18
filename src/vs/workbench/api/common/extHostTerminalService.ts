@@ -893,6 +893,7 @@ class UnifiedEnvironmentVariableCollection {
 
 	getScopedEnvironmentVariableCollection(scope: vscode.EnvironmentVariableScope | undefined): IEnvironmentVariableCollection {
 		const scopedCollectionKey = this.getScopeKey(scope);
+		console.log('Getting scoped env collection', scopedCollectionKey);
 		let scopedCollection = this.scopedCollections.get(scopedCollectionKey);
 		if (!scopedCollection) {
 			scopedCollection = new ScopedEnvironmentVariableCollection(this, scope);
@@ -932,7 +933,7 @@ class UnifiedEnvironmentVariableCollection {
 	get(variable: string, scope: vscode.EnvironmentVariableScope | undefined): vscode.EnvironmentVariableMutator | undefined {
 		const key = this.getKey(variable, scope);
 		const value = this.map.get(key);
-		console.log(`Getting collection key ${key}: ${value?.value}`);
+		console.log(`Getting collection key ${key}: ${value?.value}, scope: ${scope?.workspaceFolder?.uri.toString()}`);
 		return value ? convertMutator(value) : undefined;
 	}
 
