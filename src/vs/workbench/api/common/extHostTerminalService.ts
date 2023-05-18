@@ -1025,6 +1025,7 @@ class ScopedEnvironmentVariableCollection implements vscode.EnvironmentVariableC
 	}
 
 	getScopedEnvironmentVariableCollection(scope: vscode.EnvironmentVariableScope | undefined) {
+		console.log('Fetching scope collection', scope?.workspaceFolder?.uri.toString(), this.scope?.workspaceFolder?.uri.toString());
 		return this.collection.getScopedEnvironmentVariableCollection(scope);
 	}
 
