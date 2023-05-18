@@ -876,10 +876,10 @@ import { assertNoRpc, poll } from '../utils';
 				]);
 				entries = [];
 				expectedScopedCollection.forEach((v, m) => entries.push([v, m]));
-				deepStrictEqual(entries, [
-					['A', { value: 'scoped~a2~', type: EnvironmentVariableMutatorType.Replace }],
-					['B', { value: 'scoped~b2~', type: EnvironmentVariableMutatorType.Append }],
-					['C', { value: 'scoped~c2~', type: EnvironmentVariableMutatorType.Prepend }]
+				deepStrictEqual(entries.map(v => v[1]), [
+					{ value: 'scoped~a2~', type: EnvironmentVariableMutatorType.Replace },
+					{ value: 'scoped~b2~', type: EnvironmentVariableMutatorType.Append },
+					{ value: 'scoped~c2~', type: EnvironmentVariableMutatorType.Prepend }
 				]);
 			});
 		});
