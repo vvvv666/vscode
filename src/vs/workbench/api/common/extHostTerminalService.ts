@@ -1024,8 +1024,8 @@ class ScopedEnvironmentVariableCollection implements vscode.EnvironmentVariableC
 	) {
 	}
 
-	getScopedEnvironmentVariableCollection() {
-		return this.collection.getScopedEnvironmentVariableCollection(this.scope);
+	getScopedEnvironmentVariableCollection(scope: vscode.EnvironmentVariableScope | undefined) {
+		return this.collection.getScopedEnvironmentVariableCollection(scope);
 	}
 
 	replace(variable: string, value: string): void {
