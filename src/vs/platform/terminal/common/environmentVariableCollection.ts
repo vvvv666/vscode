@@ -143,7 +143,7 @@ export class MergedEnvironmentVariableCollection implements IMergedEnvironmentVa
 	getDescriptionMap(scope: EnvironmentVariableScope | undefined): Map<string, string | undefined> {
 		const result = new Map<string, string | undefined>();
 		this.descriptionMap.forEach((mutators, _key) => {
-			const filteredMutators = mutators.filter(m => filterScope(m, scope));
+			const filteredMutators = mutators.filter(m => filterScope(m, scope, true));
 			if (filteredMutators.length > 0) {
 				// There should be exactly one description per extension per scope.
 				result.set(filteredMutators[0].extensionIdentifier, filteredMutators[0].description);
@@ -184,9 +184,13 @@ export class MergedEnvironmentVariableCollection implements IMergedEnvironmentVa
 
 function filterScope(
 	mutator: IExtensionOwnedEnvironmentVariableMutator | IExtensionOwnedEnvironmentDescriptionMutator,
-	scope: EnvironmentVariableScope | undefined
+	scope: EnvironmentVariableScope | undefined,
+	strictFilter = false /** whether mutator has to exactly match the scope */
 ): boolean {
 	if (!mutator.scope) {
+		if (strictFilter) {
+			return !scope;
+		}
 		return true;
 	}
 	// If a mutator is scoped to a workspace folder, only apply it if the workspace
