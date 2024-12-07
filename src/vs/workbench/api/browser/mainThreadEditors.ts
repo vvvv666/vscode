@@ -28,13 +28,14 @@ import { IExtHostContext } from '../../services/extensions/common/extHostCustome
 import { IEditorControl } from '../../common/editor.js';
 import { getCodeEditor, ICodeEditor } from '../../../editor/browser/editorBrowser.js';
 import { IConfigurationService } from '../../../platform/configuration/common/configuration.js';
-import { DirtyDiffContribution } from '../../contrib/scm/browser/dirtydiffDecorator.js';
-import { IDirtyDiffModelService } from '../../contrib/scm/browser/diff.js';
+import { IDirtyDiffModelService } from '../../contrib/scm/browser/dirtyDiffModel.js';
 import { autorun, constObservable, derived, derivedOpts, IObservable, observableFromEvent } from '../../../base/common/observable.js';
 import { IUriIdentityService } from '../../../platform/uriIdentity/common/uriIdentity.js';
 import { isITextModel } from '../../../editor/common/model.js';
-import { LineRangeMapping, lineRangeMappingFromChanges } from '../../../editor/common/diff/rangeMapping.js';
+import { LineRangeMapping } from '../../../editor/common/diff/rangeMapping.js';
 import { equals } from '../../../base/common/arrays.js';
+import { Event } from '../../../base/common/event.js';
+import { DiffAlgorithmName } from '../../../editor/common/services/editorWorker.js';
 
 export interface IMainThreadEditorLocator {
 	getEditor(id: string): MainThreadTextEditor | undefined;
@@ -146,45 +147,58 @@ export class MainThreadTextEditors implements MainThreadTextEditorsShape {
 			? observableFromEvent(this, diffEditor.onDidChangeModel, () => diffEditor.getModel())
 			: observableFromEvent(this, codeEditor.onDidChangeModel, () => codeEditor.getModel());
 
-		const editorChangesObs = derived<IObservable<{ original: URI; modified: URI; lineRangeMappings: LineRangeMapping[] }[] | undefined>>(reader => {
+		const editorChangesObs = derived<IObservable<{ original: URI; modified: URI; changes: readonly LineRangeMapping[] }[] | undefined>>(reader => {
 			const editorModel = editorModelObs.read(reader);
 			if (!editorModel) {
 				return constObservable(undefined);
 			}
 
-			// DiffEditor
-			if (!isITextModel(editorModel)) {
-				return observableFromEvent(diffEditor.onDidUpdateDiff, () => {
-					const changes = diffEditor.getDiffComputationResult()?.changes2 ?? [];
+			const editorModelUri = isITextModel(editorModel)
+				? editorModel.uri
+				: editorModel.modified.uri;
 
-					return [{
-						original: editorModel.original.uri,
-						modified: editorModel.modified.uri,
-						lineRangeMappings: changes.map(change => change as LineRangeMapping)
-					}];
+			// TextEditor
+			if (isITextModel(editorModel)) {
+				const dirtyDiffModel = this._dirtyDiffModelService.getDirtyDiffModel(editorModelUri);
+				if (!dirtyDiffModel) {
+					return constObservable(undefined);
+				}
+
+				return observableFromEvent(this, dirtyDiffModel.onDidChange, () => {
+					return dirtyDiffModel.getQuickDiffResults()
+						.map(result => ({
+							original: result.original,
+							modified: result.modified,
+							changes: result.changes2
+						}));
 				});
 			}
 
-			// TextEditor
-			const dirtyDiffModel = this._dirtyDiffModelService.getOrCreateModel(editorModel.uri);
+			// DirtyDiffModel - we create a dirty diff model for diff editor so that
+			// we can provide multiple "original resources" to diff with the modified
+			// resource.
+			const diffAlgorithm = this._configurationService.getValue<DiffAlgorithmName>('diffEditor.diffAlgorithm');
+			const dirtyDiffModel = this._dirtyDiffModelService.getDiffModel(editorModelUri, diffAlgorithm);
 			if (!dirtyDiffModel) {
 				return constObservable(undefined);
 			}
 
-			return observableFromEvent(this, dirtyDiffModel.onDidChange, () => {
-				return dirtyDiffModel.quickDiffs.map(quickDiff => {
-					const changes = dirtyDiffModel.changes
-						.filter(change => change.label === quickDiff.label)
-						.map(change => change.change);
+			return observableFromEvent(Event.any(dirtyDiffModel.onDidChange, diffEditor.onDidUpdateDiff), () => {
+				const dirtyDiffInformation = dirtyDiffModel.getQuickDiffResults()
+					.map(result => ({
+						original: result.original,
+						modified: result.modified,
+						changes: result.changes2
+					}));
 
-					// Convert IChange[] to LineRangeMapping[]
-					const lineRangeMappings = lineRangeMappingFromChanges(changes);
-					return {
-						original: quickDiff.originalResource,
-						modified: editorModel.uri,
-						lineRangeMappings
-					};
-				});
+				const diffChanges = diffEditor.getDiffComputationResult()?.changes2 ?? [];
+				const diffInformation = [{
+					original: editorModel.original.uri,
+					modified: editorModel.modified.uri,
+					changes: diffChanges.map(change => change as LineRangeMapping)
+				}];
+
+				return [...dirtyDiffInformation, ...diffInformation];
 			});
 		});
 
@@ -203,7 +217,7 @@ export class MainThreadTextEditors implements MainThreadTextEditorsShape {
 				: editorModel.modified.getVersionId();
 
 			return editorChanges.map(change => {
-				const changes: ITextEditorChange[] = change.lineRangeMappings
+				const changes: ITextEditorChange[] = change.changes
 					.map(change => [
 						change.original.startLineNumber,
 						change.original.endLineNumberExclusive,
@@ -371,13 +385,15 @@ export class MainThreadTextEditors implements MainThreadTextEditorsShape {
 			return Promise.resolve(diffEditor.getLineChanges() || []);
 		}
 
-		const dirtyDiffContribution = codeEditor.getContribution('editor.contrib.dirtydiff');
-
-		if (dirtyDiffContribution) {
-			return Promise.resolve((dirtyDiffContribution as DirtyDiffContribution).getChanges());
+		if (!codeEditor.hasModel()) {
+			return Promise.resolve([]);
 		}
 
-		return Promise.resolve([]);
+		const dirtyDiffModel = this._dirtyDiffModelService.getDirtyDiffModel(codeEditor.getModel().uri);
+		const scmQuickDiff = dirtyDiffModel?.quickDiffs.find(quickDiff => quickDiff.isSCM);
+		const scmQuickDiffChanges = dirtyDiffModel?.changes.filter(change => change.label === scmQuickDiff?.label);
+
+		return Promise.resolve(scmQuickDiffChanges?.map(change => change.change) ?? []);
 	}
 }
 
