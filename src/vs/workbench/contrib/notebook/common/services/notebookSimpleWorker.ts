@@ -56,7 +56,8 @@ class MirrorCell {
 		hashValue = doHash(this.language, hashValue);
 		hashValue = doHash(this.getValue(), hashValue);
 		hashValue = doHash(this.metadata, hashValue);
-		hashValue = doHash(this.internalMetadata, hashValue);
+		// For purpose of diffing only cellId matters, rest do not
+		hashValue = doHash(this.internalMetadata?.cellId || '', hashValue);
 		for (const op of this.outputs) {
 			hashValue = doHash(op.metadata, hashValue);
 			for (const output of op.outputs) {
@@ -193,7 +194,8 @@ export class NotebookEditorSimpleWorker implements IRequestHandler, IDisposable 
 			dto.language,
 			dto.cellKind,
 			dto.outputs,
-			dto.metadata
+			dto.metadata,
+			dto.internalMetadata
 		)), metadata, transientDocumentMetadata);
 	}
 
@@ -230,16 +232,19 @@ export class NotebookEditorSimpleWorker implements IRequestHandler, IDisposable 
 		const modifiedMetadata = filter(modified.metadata, key => !modified.transientDocumentMetadata[key]);
 		return {
 			metadataChanged: JSON.stringify(originalMetadata) !== JSON.stringify(modifiedMetadata),
-			cellsDiff: diffResult,
+			cellsDiff: await this.$computeDiffWithCellIds(original, modified) || diffResult,
 			// linesDiff: cellLineChanges
 		};
 	}
 
 	async $computeDiffWithCellIds(original: MirrorNotebookDocument, modified: MirrorNotebookDocument): Promise<IDiffResult | undefined> {
-		const originalCellIds = original.cells.map((cell, index) => ({ index, id: (cell.metadata?.id || '') as string }));
-		const modifiedCellIds = modified.cells.map((cell, index) => ({ index, id: (cell.metadata?.id || '') as string }));
-
-		if (originalCellIds.some(c => !c.id) || modifiedCellIds.some(c => !c.id)) {
+		const originalCellIndexIds = original.cells.map((cell, index) => ({ index, id: (cell.metadata?.id || '') as string }));
+		const modifiedCellIndexIds = modified.cells.map((cell, index) => ({ index, id: (cell.metadata?.id || '') as string }));
+		const originalCellIds = originalCellIndexIds.map(c => c.id);
+		const modifiedCellIds = modifiedCellIndexIds.map(c => c.id);
+		const orderOrOriginalCellIds = originalCellIds.filter(id => modifiedCellIds.includes(id)).join(',');
+		const orderOrModifiedCellIds = modifiedCellIds.filter(id => originalCellIds.includes(id)).join(',');
+		if (originalCellIndexIds.some(c => !c.id) || modifiedCellIndexIds.some(c => !c.id) || orderOrOriginalCellIds !== orderOrModifiedCellIds) {
 			return;
 		}
 
@@ -258,13 +263,13 @@ export class NotebookEditorSimpleWorker implements IRequestHandler, IDisposable 
 
 		const [originalSeq, modifiedSeq] = await Promise.all([computeCellHashesById(original), computeCellHashesById(modified)]);
 
-		while (modifiedCellIds.length) {
-			const modifiedCell = modifiedCellIds.shift()!;
-			const originalCell = originalCellIds.find(c => c.id === modifiedCell.id);
+		while (modifiedCellIndexIds.length) {
+			const modifiedCell = modifiedCellIndexIds.shift()!;
+			const originalCell = originalCellIndexIds.find(c => c.id === modifiedCell.id);
 			if (originalCell) {
 				// Everything before this cell is a deletion
-				const index = originalCellIds.indexOf(originalCell);
-				const deletedFromOriginal = originalCellIds.splice(0, index + 1);
+				const index = originalCellIndexIds.indexOf(originalCell);
+				const deletedFromOriginal = originalCellIndexIds.splice(0, index + 1);
 
 				if (deletedFromOriginal.length === 1) {
 					if (originalSeq.get(originalCell.id) === modifiedSeq.get(originalCell.id)) {
@@ -293,7 +298,7 @@ export class NotebookEditorSimpleWorker implements IRequestHandler, IDisposable 
 			else {
 				// This is a new cell.
 				diffResult.changes.push({
-					originalStart: originalCellIds.length ? originalCellIds[0].index : original.cells.length,
+					originalStart: originalCellIndexIds.length ? originalCellIndexIds[0].index : original.cells.length,
 					originalLength: 0,
 					modifiedStart: modifiedCell.index,
 					modifiedLength: 1
@@ -302,11 +307,11 @@ export class NotebookEditorSimpleWorker implements IRequestHandler, IDisposable 
 		}
 
 		// If we still have some original cells, then those have been removed.
-		if (originalCellIds.length) {
+		if (originalCellIndexIds.length) {
 			diffResult.changes.push({
-				originalStart: originalCellIds[0].index,
-				originalLength: originalCellIds.length,
-				modifiedStart: modifiedCellIds.length,
+				originalStart: originalCellIndexIds[0].index,
+				originalLength: originalCellIndexIds.length,
+				modifiedStart: modifiedCellIndexIds.length,
 				modifiedLength: 0
 			});
 		}
