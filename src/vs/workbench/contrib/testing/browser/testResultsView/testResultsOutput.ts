@@ -67,7 +67,7 @@ class SimpleDiffEditorModel extends EditorModel {
 
 
 export interface IPeekOutputRenderer extends IDisposable {
-	onDidContentSizeChange?: Event<void>;
+	readonly onDidContentSizeChange?: Event<void>;
 	onScrolled?(evt: ScrollEvent): void;
 	/** Updates the displayed test. Should clear if it cannot display the test. */
 	update(subject: InspectSubject): Promise<boolean>;
@@ -119,10 +119,8 @@ function applyEditorMirrorOptions<T extends IEditorOptions>(base: T, cfg: IConfi
 		let changed = false;
 		const patch: Partial<IEditorOptions> = {};
 		for (const [key, value] of Object.entries(configuration)) {
-			// eslint-disable-next-line local/code-no-any-casts
-			if (!immutable.has(key) && (base as any)[key] !== value) {
-				// eslint-disable-next-line local/code-no-any-casts
-				(patch as any)[key] = value;
+			if (!immutable.has(key) && (base as Record<string, unknown>)[key] !== value) {
+				(patch as Record<string, unknown>)[key] = value;
 				changed = true;
 			}
 		}
